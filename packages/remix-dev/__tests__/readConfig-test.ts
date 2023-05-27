@@ -79,6 +79,7 @@ describe("readConfig", () => {
         "serverConditions": undefined,
         "serverDependenciesToBundle": Array [],
         "serverEntryPoint": undefined,
+        "warnOnFakeBuiltins": false,
         "serverMainFields": Array [
           "main",
           "module",
@@ -90,6 +91,7 @@ describe("readConfig", () => {
         "tailwind": false,
         "tsconfigPath": Any<String>,
         "watchPaths": Array [],
+        "warnOnFakeBuiltins": false,
       }
     `
     );
