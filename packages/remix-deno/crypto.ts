@@ -1,4 +1,9 @@
-import type { SignFunction, UnsignFunction } from "@remix-run/server-runtime";
+import type {
+  DecryptFunction,
+  EncryptFunction,
+  SignFunction,
+  UnsignFunction,
+} from "@remix-run/server-runtime/crypto";
 
 const encoder = new TextEncoder();
 
@@ -25,6 +30,70 @@ export const unsign: UnsignFunction = async (cookie, secret) => {
 
   return valid ? value : false;
 };
+
+export const encrypt: EncryptFunction = async (
+  value: string,
+  secret: string,
+) => {
+  const aes_key = await createEncryptionKey(secret);
+  const iv = crypto.getRandomValues(new Uint8Array(16));
+
+  const encrypted = await crypto.subtle.encrypt(
+    {
+      name: "AES-GCM",
+      iv: iv,
+    },
+    aes_key,
+    encoder.encode(value),
+  );
+
+  return btoa(
+    String.fromCharCode(...new Uint8Array(iv)) +
+      String.fromCharCode(...new Uint8Array(encrypted)),
+  ).replace(/=+$/, "");
+};
+
+export const decrypt: DecryptFunction = async (
+  encrypted: string,
+  secret: string,
+) => {
+  const cipher = byteStringToUint8Array(atob(encrypted));
+
+  const aes_key = await createEncryptionKey(secret);
+  const decrypted = await crypto.subtle.decrypt(
+    {
+      name: "AES-GCM",
+      iv: cipher.slice(0, 16),
+    },
+    aes_key,
+    cipher.slice(16),
+  );
+
+  return String.fromCharCode(...new Uint8Array(decrypted));
+};
+
+async function createEncryptionKey(encryption_key: string) {
+  const master = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(encryption_key),
+    "HKDF",
+    false,
+    ["deriveKey"],
+  );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: "HKDF",
+      salt: encoder.encode(`remix-run`),
+      info: encoder.encode("build better web"),
+      hash: "SHA-512",
+    },
+    master,
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"],
+  );
+}
 
 async function createKey(
   secret: string,

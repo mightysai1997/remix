@@ -5,6 +5,14 @@ export type UnsignFunction = (
   secret: string
 ) => Promise<string | false>;
 
+export type EncryptFunction = (value: string, key: string) => Promise<string>;
+
+export type DecryptFunction = (
+  cookie: string,
+  key: string
+) => Promise<string | false>;
+
+
 // TODO: Once Node v19 is supported we should use the globally provided
 // Web Crypto API's and re-enable this code-path in "./cookies.ts"
 // instead of referencing the `sign` and `unsign` globals.
