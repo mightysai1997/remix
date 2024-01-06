@@ -1,9 +1,14 @@
-export type SignFunction = (value: string, secret: string) => Promise<string>;
+import type { Promisable } from "type-fest";
+
+export type SignFunction = (
+  value: string,
+  secret: string
+) => Promisable<string>;
 
 export type UnsignFunction = (
   cookie: string,
   secret: string
-) => Promise<string | false>;
+) => Promisable<string | false>;
 
 // TODO: Once Node v19 is supported we should use the globally provided
 // Web Crypto API's and re-enable this code-path in "./cookies.ts"
