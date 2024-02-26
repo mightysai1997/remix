@@ -579,7 +579,7 @@ export const remixVitePlugin: RemixVitePlugin = (remixUserConfig = {}) => {
       basename: "/",
       buildDirectory: "build",
       manifest: false,
-      serverBuildFile: "index.js",
+      serverBuildFile: "[name].js",
       ssr: true,
     } as const satisfies Partial<VitePluginConfig>;
 
@@ -952,6 +952,35 @@ export const remixVitePlugin: RemixVitePlugin = (remixUserConfig = {}) => {
           )
         );
 
+        let userConfigSSRRollupOptionsInput:
+          | undefined
+          | Record<string, string> = undefined;
+        let userConfigClientRollupOptionsInput: string[] = [];
+        let userRollupInput = viteUserConfig.build?.rollupOptions?.input;
+        if (userRollupInput) {
+          if (viteConfigEnv.isSsrBuild) {
+            // We only allow objects because we want to enforce the remix build output is named "index"
+            if (
+              typeof userRollupInput !== "object" ||
+              Array.isArray(userRollupInput)
+            ) {
+              throw new Error(
+                "The `build.rollupOptions.input` option in `vite.config` must be an object for SSR builds"
+              );
+            }
+            userConfigSSRRollupOptionsInput = userRollupInput;
+          } else {
+            // We only allow arrays because entries are all hashed anyways
+            if (!Array.isArray(userRollupInput)) {
+              throw new Error(
+                "The `build.rollupOptions.input` option in `vite.config` must be an array for client builds"
+              );
+            }
+            userConfigClientRollupOptionsInput = userRollupInput || [];
+            console.log({ userConfigClientRollupOptionsInput });
+          }
+        }
+
         return {
           __remixPluginContext: ctx,
           appType:
@@ -1021,6 +1050,7 @@ export const remixVitePlugin: RemixVitePlugin = (remixUserConfig = {}) => {
                                   route.file
                                 )}${CLIENT_ROUTE_QUERY_STRING}`
                             ),
+                            ...userConfigClientRollupOptionsInput,
                           ],
                         },
                       }
@@ -1036,7 +1066,10 @@ export const remixVitePlugin: RemixVitePlugin = (remixUserConfig = {}) => {
                         outDir: getServerBuildDirectory(ctx),
                         rollupOptions: {
                           preserveEntrySignatures: "exports-only",
-                          input: serverBuildId,
+                          input: {
+                            ...userConfigSSRRollupOptionsInput,
+                            index: serverBuildId,
+                          },
                           output: {
                             entryFileNames: ctx.remixConfig.serverBuildFile,
                             format: ctx.remixConfig.serverModuleFormat,
