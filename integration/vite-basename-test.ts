@@ -94,8 +94,9 @@ const customServerFile = ({
   basename = basename ?? base;
 
   return String.raw`
+    import path from "node:path";
     import { createRequestHandler } from "@remix-run/express";
-    import { installGlobals } from "@remix-run/node";
+    import { installGlobals, getServerBuild } from "@remix-run/node";
     import express from "express";
     installGlobals();
 
@@ -112,14 +113,11 @@ const customServerFile = ({
 
     const app = express();
     app.use("${base}", viteDevServer?.middlewares || express.static("build/client"));
-    app.all(
-      "${basename}*",
-      createRequestHandler({
-        build: viteDevServer
-          ? () => viteDevServer.ssrLoadModule("virtual:remix/server-build")
-          : await import("./build/server/index.js"),
-      })
-    );
+
+    const buildPath = path.resolve("./build/server/index.js");
+    console.log({ viteDevServer, mode: process.env.NODE_ENV });
+    const build = await getServerBuild(buildPath, { viteDevServer });
+    app.all("${basename}*", createRequestHandler({ build }));
     app.get("*", (_req, res) => {
       res.setHeader("content-type", "text/html")
       res.end('Remix app is at <a href="${basename}">${basename}</a>');
