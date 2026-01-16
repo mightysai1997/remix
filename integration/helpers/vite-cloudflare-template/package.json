@@ -15,7 +15,7 @@
     "@remix-run/cloudflare-pages": "2.11.1",
     "@remix-run/react": "2.11.1",
     "isbot": "^4.1.0",
-    "miniflare": "^3.20231030.4",
+    "miniflare": "^4.20250712.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
